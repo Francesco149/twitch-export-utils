@@ -1,0 +1,9 @@
+/config.py
+/token.json
+/credentials.json
+/twitch_highlights.xlsx
+*.bak
+*.csv
+*.pickle
+/__pycache__
+/.direnv
