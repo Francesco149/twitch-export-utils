@@ -1,3 +1,19 @@
+# usage
+
+```sh
+python3 ./twitch-export.py
+
+# open the spreadsheet, click links and export to yt making sure to include the timestamp in title
+# wait a day or two for vids to process
+
+python3 ./yt-check.py
+cat output.csv | cut -d, -f2- | tail -n +2 | xclip -sel cli
+
+# paste in a column in your spreadsheet and you will get your youtube urls
+
+# TODO: generate playlist with all videos and set them as unlisted
+```
+
 # setting up the youtube auth (ai generated)
 
 Absolutely! Here’s a **step-by-step guide** to setting up a new project in the Google Cloud Console, enabling the YouTube Data API v3, and generating the `credentials.json` file for your script:
