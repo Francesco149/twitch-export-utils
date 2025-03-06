@@ -24,6 +24,21 @@ https://nix.dev/install-nix.html
 
 ```sh
 nix-shell -p git --run 'git clone https://github.com/Francesco149/twitch-export-utils'
+```
+
+create a config.py files in twitch-export-utils containing the following:
+
+```
+# google how to set up a twitch app to get these
+CLIENT_ID = 'twitch client id'
+CLIENT_SECRET = 'twitch client secret'
+REDIRECT_URI = "http://localhost:3000"  # config your twitch app with same url
+USERNAME = "your twitch username"
+SPREADSHEET = 'twitch_highlights.xlsx'
+
+```
+
+```sh
 cd twitch-export-utils
 nix develop # or nix-shell
 
