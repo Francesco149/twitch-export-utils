@@ -15,11 +15,6 @@ def load_pickle_file():
     with open(PICKLE_FILE, "rb") as file:
         return pickle.load(file)
 
-def save_downloaded_vods(vods):
-    """Save the list of downloaded VODs to a pickle file."""
-    with open(PICKLE_FILE, "wb") as file:
-        pickle.dump(vods, file)
-
 def download_vod(vod_url, output_file):
     """Download a VOD using yt-dlp."""
     print(f"Downloading VOD from {vod_url} to {output_file}")
