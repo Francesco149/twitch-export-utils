@@ -1,15 +1,34 @@
 # usage
 
+install the nix package manager (untested on windows, just use WSL or linux)
+
+https://nix.dev/install-nix.html
+
 ```sh
+nix-shell -p git --run 'git clone https://github.com/Francesco149/twitch-export-utils'
+cd twitch-export-utils
+nix develop # or nix-shell
+
 python3 ./twitch-export.py
 
 # open the spreadsheet, click links and export to yt making sure to include the timestamp in title
+
+python3 ./download-vods.py
+
+# this will download all vods longer than 12h to ./vods
+
+python3 ./upload-long-vods.py
+
+# this will split the long vods to 11hr 58min parts and upload them as private videos
+# full title will be included in the video description
+
 # wait a day or two for vids to process
 
 python3 ./yt-check.py
 cat output.csv | cut -d, -f2- | tail -n +2 | xclip -sel cli
 
 # paste in a column in your spreadsheet and you will get your youtube urls
+# check for any blank youtube urls and manually verify and fix
 
 # TODO: generate playlist with all videos and set them as unlisted
 ```
