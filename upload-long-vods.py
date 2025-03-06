@@ -15,6 +15,7 @@ SCOPES = ["https://www.googleapis.com/auth/youtube.upload"]
 YOUTUBE_API_SERVICE_NAME = "youtube"
 YOUTUBE_API_VERSION = "v3"
 TOKEN_FILE = "token-upload.json"
+VODS_DIR = "./vods"
 
 def load_pickle_file():
     with open(PICKLE_FILE, "rb") as file:
@@ -44,11 +45,6 @@ def authenticate_youtube():
             token.write(creds.to_json())
     return build(YOUTUBE_API_SERVICE_NAME, YOUTUBE_API_VERSION, credentials=creds)
 
-def download_vod(vod_url, output_file):
-    print(f"Downloading VOD from {vod_url} to {output_file}")
-    command = ["yt-dlp", "--downloader=aria2c", "--embed-chapters", "-o", output_file, vod_url]
-    subprocess.run(command, check=True)
-
 def split_video(input_file, part1_file, part2_file):
     print(f"Splitting {input_file} into {part1_file} and {part2_file}")
 
@@ -62,7 +58,7 @@ def split_video(input_file, part1_file, part2_file):
 def upload_video(youtube, file, title, description="", category="22", tags=None):
     body = {
         "snippet": {
-            "title": title,
+            "title": title[:99],  # Truncate title to 99 characters
             "description": description,
             "tags": tags,
             "categoryId": category,
@@ -85,35 +81,37 @@ def upload_video(youtube, file, title, description="", category="22", tags=None)
 def main():
     vod_data = load_pickle_file()
     status = load_upload_status()
-
     youtube = authenticate_youtube()
 
-    for i, pair in enumerate(vod_data):
-        vod_url, vod_metadata = pair
-        print(f"Processing long VOD {i+1}/{len(vod_data)}")
+    for i, (vod_url, vod_metadata) in enumerate(vod_data):
+        print(f"Processing VOD {i+1}/{len(vod_data)}: {vod_metadata}")
 
         if vod_url in status["uploaded"]:
             print(f"Skipping already uploaded VOD: {vod_url}")
             continue
 
-        output_file = f"vod_{vod_data.index((vod_url, vod_metadata))}.mp4"
-        download_vod(vod_url, output_file)
-
+        output_file = os.path.join(VODS_DIR, f"vod_{i}.mp4")
         part1_file = output_file.replace(".mp4", "_part1.mp4")
         part2_file = output_file.replace(".mp4", "_part2.mp4")
         split_video(output_file, part1_file, part2_file)
 
-        part1_title = f"(Part 1/2) {vod_metadata}"
-        upload_video(youtube, part1_file, part1_title)
+        # Use the full title in the description
+        full_title = vod_metadata
+        description = f"Full Title: {full_title}\n\nThis video has been split into two parts for upload."
+
+        # Upload Part 1
+        part1_title = f"(Part 1/2) {full_title[:99]}"  # yt title limit is 99 characters
+        upload_video(youtube, part1_file, part1_title, description)
         status["uploaded"].append(vod_url)
 
-        part2_title = f"(Part 2/2) {vod_metadata}"
-        upload_video(youtube, part2_file, part2_title)
+        # Upload Part 2
+        part2_title = f"(Part 2/2) {full_title[:99]}"  # Truncate title to 99 characters
+        upload_video(youtube, part2_file, part2_title, description)
         status["uploaded"].append(vod_url)
 
         save_upload_status(status)
 
-        os.remove(output_file)
+        # Clean up split files
         os.remove(part1_file)
         os.remove(part2_file)
 
