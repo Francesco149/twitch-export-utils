@@ -20,6 +20,9 @@
           buildInputs = [
             nixpkgs-fmt
             python3
+            ffmpeg
+            yt-dlp
+            aria
           ] ++ (with python313Packages; [
             google-auth
             google-auth-oauthlib

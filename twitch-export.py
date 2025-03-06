@@ -3,6 +3,7 @@ from openpyxl import Workbook
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import webbrowser
 import urllib.parse
+import pickle
 from config import *
 
 # Twitch API credentials
@@ -143,6 +144,47 @@ def generate_spreadsheet(highlights):
     wb.save(SPREADSHEET)
     print("Spreadsheet generated: " + SPREADSHEET)
 
+# Parse duration in the format "XhYmZs" and return total duration in hours
+def parse_duration(duration_str):
+    hours = 0
+    minutes = 0
+    seconds = 0
+
+    # Extract hours
+    if "h" in duration_str:
+        hours = int(duration_str.split("h")[0])
+        duration_str = duration_str.split("h")[1]
+
+    # Extract minutes
+    if "m" in duration_str:
+        minutes = int(duration_str.split("m")[0])
+        duration_str = duration_str.split("m")[1]
+
+    # Extract seconds
+    if "s" in duration_str:
+        seconds = int(duration_str.split("s")[0])
+
+    # Convert everything to hours
+    total_hours = hours + (minutes / 60) + (seconds / 3600)
+    return total_hours
+
+# Generate pickle file with VOD URLs and metadata
+def generate_vod_pickle_file(highlights):
+    vod_data = []
+    for highlight in highlights:
+        duration_str = highlight["duration"]
+        total_duration = parse_duration(duration_str)
+        if total_duration >= 12:
+            vod_url = f"https://www.twitch.tv/videos/{highlight['id']}"
+            timestamp = highlight["created_at"]
+            title = highlight["title"]
+            vod_data.append((vod_url, f"{timestamp} {title}"))
+
+    # Save the list of pairs to a pickle file
+    with open("long_vods.pkl", "wb") as file:
+        pickle.dump(vod_data, file)
+    print("Pickle file with long VOD URLs and metadata generated: long_vods.pkl")
+
 # Main script
 if __name__ == "__main__":
     try:
@@ -157,5 +199,8 @@ if __name__ == "__main__":
 
         # Generate spreadsheet
         generate_spreadsheet(highlights)
+
+        # Generate pickle file with VOD URLs and metadata
+        generate_vod_pickle_file(highlights)
     except Exception as e:
         print(f"An error occurred: {e}")
