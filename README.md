@@ -45,7 +45,7 @@ python3 ./upload-long-vods.py
 
 # wait a day or two for vids to process
 
-python3 ./yt-check.py
+python3 ./yt-checker.py
 cat output.csv | cut -d, -f2- | tail -n +2 | xclip -sel cli
 
 # paste in a column in your spreadsheet and you will get your youtube urls
