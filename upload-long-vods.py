@@ -88,7 +88,10 @@ def main():
 
     youtube = authenticate_youtube()
 
-    for vod_url, vod_metadata in vod_data:
+    for i, pair in enumerate(vod_data):
+        vod_url, vod_metadata = pair
+        print(f"Processing long VOD {i+1}/{len(vod_data)}")
+
         if vod_url in status["uploaded"]:
             print(f"Skipping already uploaded VOD: {vod_url}")
             continue
