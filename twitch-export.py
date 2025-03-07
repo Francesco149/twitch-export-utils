@@ -143,7 +143,7 @@ def adjust_ts(highlights):
         date_time, seen_ts = handle_duplicate_ts(highlight["created_at"], seen_ts)
         highlight["created_at"] = date_time
 
-def generate_spreadsheet(highlights):
+def generate_spreadsheet(highlights, long_vod_data):
     wb = Workbook()
     ws = wb.active
     ws.title = "Twitch Highlights"
@@ -151,12 +151,19 @@ def generate_spreadsheet(highlights):
     # Add headers
     ws.append(["Date and Time", "Title", "Twitch Link", "YouTube Link"])
 
+    long_vod_ts = [title.split(' ')[0] for (url, title) in long_vod_data]
+
     # Add highlight data
     for highlight in highlights:
         date_time = highlight["created_at"]
         title = highlight["title"]
         twitch_link = f"https://dashboard.twitch.tv/u/{USERNAME}/content/video-producer/edit/{highlight['id']}"
-        ws.append([date_time, title, twitch_link, ""])
+
+        if date_time in long_vod_ts:
+          ws.append([f"{date_time}.0", title, twitch_link, ""])
+          ws.append([f"{date_time}.1", title, twitch_link, ""])
+        else:
+          ws.append([date_time, title, twitch_link, ""])
 
     # Save the spreadsheet
     wb.save(SPREADSHEET)
@@ -186,8 +193,7 @@ def parse_duration(duration_str):
     total_hours = hours + (minutes / 60) + (seconds / 3600)
     return total_hours
 
-# Generate pickle file with VOD URLs and metadata
-def generate_vod_pickle_file(highlights):
+def generate_long_vod_pickle_file(highlights):
     vod_data = []
     for highlight in highlights:
         duration_str = highlight["duration"]
@@ -202,15 +208,14 @@ def generate_vod_pickle_file(highlights):
     with open("long_vods.pkl", "wb") as file:
         pickle.dump(vod_data, file)
     print("Pickle file with long VOD URLs and metadata generated: long_vods.pkl")
+    return vod_data
 
 # Main script
 if __name__ == "__main__":
     try:
-        # Automatically obtain OAuth token
         OAUTH_TOKEN = get_oauth_token()
         print("OAuth token obtained successfully.")
 
-        # Fetch user ID and highlights
         user_id = get_user_id(USERNAME)
         highlights = fetch_all_highlights(user_id)
         print(f"Fetched {len(highlights)} highlights.")
@@ -218,10 +223,7 @@ if __name__ == "__main__":
         # fix duplicate timestamps
         adjust_ts(highlights)
 
-        # Generate spreadsheet
-        generate_spreadsheet(highlights)
-
-        # Generate pickle file with VOD URLs and metadata
-        generate_vod_pickle_file(highlights)
+        long_vod_data = generate_long_vod_pickle_file(highlights)
+        generate_spreadsheet(highlights, long_vod_data)
     except Exception as e:
         print(f"An error occurred: {e}")

@@ -54,17 +54,17 @@ def fetch_all_videos(youtube):
 
     return videos
 
-def search_videos_by_timestamps(youtube, timestamps):
+def search_videos_by_timestamps(youtube, timestamps, titles):
     # Fetch all videos from the channel (with pagination)
     videos = [x for x in fetch_all_videos(youtube) if 'snippet' in x]
     print(f"found {len(videos)} videos")
 
     # Match timestamps to video titles
     video_urls = []
-    for timestamp in timestamps:
+    for timestamp, title in zip(timestamps, titles):
         found = False
         for video in videos:
-            if timestamp in video['snippet']['title']:
+            if truncate_title(f"{timestamp} {title}") in video['snippet']['title']:
                 video_id = video['id']['videoId']
                 video_urls.append(f"https://www.youtube.com/watch?v={video_id}")
                 found = True
@@ -77,10 +77,13 @@ def read_timestamps_from_excel(file_path):
     workbook = load_workbook(filename=file_path)
     sheet = workbook.active
     timestamps = []
+    titles = []
     for row in sheet.iter_rows(min_row=2, values_only=True):  # Skip header row
         if row[0]:
             timestamps.append(row[0])
-    return timestamps
+        if row[1]:
+            titles.append(row[1])
+    return (timestamps, titles)
 
 def main():
     # Path to the Excel file
@@ -88,7 +91,7 @@ def main():
 
     # Read timestamps from the Excel file
     try:
-        timestamps = read_timestamps_from_excel(excel_file_path)
+        timestamps, titles = read_timestamps_from_excel(excel_file_path)
     except Exception as e:
         print(f"Error reading Excel file: {e}")
         return
@@ -97,7 +100,7 @@ def main():
     youtube = authenticate_youtube()
 
     # Search for videos and collect URLs
-    video_urls = search_videos_by_timestamps(youtube, timestamps)
+    video_urls = search_videos_by_timestamps(youtube, timestamps, titles)
 
     # used to temporarily mark long vods in the spreadsheet so I don't
     # click them
@@ -107,8 +110,11 @@ def main():
 
         longvods_ts = [title.split(' ')[0] for (url, title) in longvods]
 
+        # ts1 ts2 -> ts1.0 ts1.1 ts2.0 ts2.1 ...
+        longvods_ts_split = [f"{ts}.{i}" for ts in longvods_ts for i in range(2)]
+
         for i, (ts, url) in enumerate(zip(timestamps, video_urls)):
-          if ts in longvods_ts:
+          if ts in longvods_ts_split:
               video_urls[i] = "*** LONG VOD >12h ***"
 
     # Create a DataFrame with the results

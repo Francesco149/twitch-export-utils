@@ -58,7 +58,7 @@ def split_video(input_file, part1_file, part2_file):
 def upload_video(youtube, file, title, description="", category="22", tags=None):
     body = {
         "snippet": {
-            "title": title[:99],  # Truncate title to 99 characters
+            "title": truncate_title(title),
             "description": description,
             "tags": tags,
             "categoryId": category,
@@ -97,15 +97,20 @@ def main():
 
         # Use the full title in the description
         full_title = vod_metadata
+
+        # more fuckery because of my stupid fucking mistakes
+        # we want the timestamp to be split into .0 and .1 for the two parts
+        # so we can distinguish them
+
+        part1_title = f"{vod_metadata.split(' ')[0]}.0 {vod.metadata.split(' ')[1]}"
+        part2_title = f"{vod_metadata.split(' ')[0]}.1 {vod.metadata.split(' ')[1]}"
         description = f"Full Title: {full_title}\n\nThis video has been split into two parts for upload."
 
         # Upload Part 1
-        part1_title = f"(Part 1/2) {full_title[:99]}"  # yt title limit is 99 characters
         upload_video(youtube, part1_file, part1_title, description)
         status["uploaded"].append(vod_url)
 
         # Upload Part 2
-        part2_title = f"(Part 2/2) {full_title[:99]}"  # Truncate title to 99 characters
         upload_video(youtube, part2_file, part2_title, description)
         status["uploaded"].append(vod_url)
 
