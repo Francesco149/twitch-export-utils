@@ -9,6 +9,7 @@ from openpyxl import load_workbook
 import pickle
 import sys
 from config import *
+from common import *
 
 # If modifying these SCOPES, delete the file token.json.
 SCOPES = ['https://www.googleapis.com/auth/youtube.readonly']
@@ -26,29 +27,6 @@ def authenticate_youtube():
         with open('token.json', 'w') as token:
             token.write(creds.to_json())
     return build('youtube', 'v3', credentials=creds)
-
-def cache_name(name):
-    return name + '.pickle'
-
-def cache_load(name):
-    fn = cache_name(name)
-    if os.path.exists(fn):
-        with open(fn, 'rb') as f:
-            return pickle.load(f)
-    return None
-
-def cache_dump(name, data):
-    fn = cache_name(name)
-    with open(fn, 'wb') as f:
-        pickle.dump(data, f)
-    return data
-
-def cached(func):
-    def wrapper(*args, **kwargs):
-        if c := cache_load(func.__name__):
-            return c
-        return cache_dump(func.__name__, func(*args, **kwargs))
-    return wrapper
 
 @cached
 def fetch_all_videos(youtube):
@@ -123,7 +101,7 @@ def main():
 
     # used to temporarily mark long vods in the spreadsheet so I don't
     # click them
-    if sys.argv[1] == "-m":
+    if len(sys.argv) > 1 and sys.argv[1] == "-m":
         with open("long_vods.pkl", "rb") as file:
             longvods = pickle.load(file)
 

@@ -5,6 +5,7 @@ import webbrowser
 import urllib.parse
 import pickle
 from config import *
+from common import *
 
 # Twitch API credentials
 #CLIENT_ID = 'xxx'
@@ -62,7 +63,7 @@ def start_local_server():
     print("Starting local server to handle OAuth redirect...")
     server.handle_request()  # Handle one request and then stop
 
-# Automatically obtain OAuth token
+@cached
 def get_oauth_token():
     # Open the Twitch authorization page in the default browser
     auth_params = {
@@ -82,7 +83,7 @@ def get_oauth_token():
     else:
         raise Exception("Failed to obtain OAuth token.")
 
-# Get user ID from username
+@cached
 def get_user_id(username):
     headers = {
         "Client-ID": CLIENT_ID,
@@ -96,7 +97,7 @@ def get_user_id(username):
             return data["data"][0]["id"]
     raise Exception(f"Failed to fetch user ID for {username}")
 
-# Fetch all highlights for the user with pagination
+@cached
 def fetch_all_highlights(user_id):
     highlights = []
     cursor = None
@@ -124,7 +125,24 @@ def fetch_all_highlights(user_id):
 
     return highlights
 
-# Generate spreadsheet
+# stupid me decided to use timestamps so now I have to deal
+# with a few identical ones.
+# why didn't I use video id's? why?
+def handle_duplicate_ts(date_time, seen_ts):
+    i = 0
+    new_dt = date_time
+    while new_dt in seen_ts:
+        new_dt = f"{date_time}.{i}"
+        i += 1
+    seen_ts.append(new_dt)
+    return (new_dt, seen_ts)
+
+def adjust_ts(highlights):
+    seen_ts = []
+    for highlight in highlights:
+        date_time, seen_ts = handle_duplicate_ts(highlight["created_at"], seen_ts)
+        highlight["created_at"] = date_time
+
 def generate_spreadsheet(highlights):
     wb = Workbook()
     ws = wb.active
@@ -196,6 +214,9 @@ if __name__ == "__main__":
         user_id = get_user_id(USERNAME)
         highlights = fetch_all_highlights(user_id)
         print(f"Fetched {len(highlights)} highlights.")
+
+        # fix duplicate timestamps
+        adjust_ts(highlights)
 
         # Generate spreadsheet
         generate_spreadsheet(highlights)
