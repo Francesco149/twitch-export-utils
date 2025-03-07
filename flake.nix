@@ -16,14 +16,14 @@
     flake-utils.lib.eachDefaultSystem (system: {
       # use nix-shell or nix develop to access this shell
       devShell = with nixpkgs.legacyPackages.${system};
-        mkShell {
+      mkShell {
           buildInputs = [
             nixpkgs-fmt
-            python3
+            python312
             ffmpeg
             yt-dlp
             aria
-          ] ++ (with python313Packages; [
+          ] ++ (with python312Packages; [
             google-auth
             google-auth-oauthlib
             google-auth-httplib2

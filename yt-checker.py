@@ -7,6 +7,7 @@ from googleapiclient.discovery import build
 import pandas as pd
 from openpyxl import load_workbook
 import pickle
+import sys
 from config import *
 
 # If modifying these SCOPES, delete the file token.json.
@@ -119,6 +120,18 @@ def main():
 
     # Search for videos and collect URLs
     video_urls = search_videos_by_timestamps(youtube, timestamps)
+
+    # used to temporarily mark long vods in the spreadsheet so I don't
+    # click them
+    if sys.argv[1] == "-m":
+        with open("long_vods.pkl", "rb") as file:
+            longvods = pickle.load(file)
+
+        longvods_ts = [title.split(' ')[0] for (url, title) in longvods]
+
+        for i, (ts, url) in enumerate(zip(timestamps, video_urls)):
+          if ts in longvods_ts:
+              video_urls[i] = "*** LONG VOD >12h ***"
 
     # Create a DataFrame with the results
     df = pd.DataFrame({
