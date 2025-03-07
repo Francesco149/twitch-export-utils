@@ -26,6 +26,7 @@ def cached(func):
 
 
 def truncate_title(ftitle):
+    ftitle = ftitle.strip("<>")
     try:
       return ftitle.encode()[:99].decode()
     except UnicodeDecodeError as err:
