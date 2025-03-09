@@ -135,12 +135,12 @@ def handle_duplicate_ts(date_time, seen_ts):
         new_dt = f"{date_time}.{i}"
         i += 1
     seen_ts.append(new_dt)
-    return (new_dt, seen_ts)
+    return new_dt
 
 def adjust_ts(highlights):
     seen_ts = []
     for highlight in highlights:
-        date_time, seen_ts = handle_duplicate_ts(highlight["created_at"], seen_ts)
+        date_time = handle_duplicate_ts(highlight["created_at"], seen_ts)
         highlight["created_at"] = date_time
 
 def generate_spreadsheet(highlights, long_vod_data):
