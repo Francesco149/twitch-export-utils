@@ -137,33 +137,38 @@ def handle_duplicate_ts(date_time, seen_ts):
     seen_ts.append(new_dt)
     return new_dt
 
-def adjust_ts(highlights):
+def adjust_ts(highlights, long_vod_ts):
     seen_ts = []
     for highlight in highlights:
-        date_time = handle_duplicate_ts(highlight["created_at"], seen_ts)
+        date_time = highlight["created_at"]
+        if date_time in long_vod_ts:
+            date_time = [
+                handle_duplicate_ts(f"{date_time}.0", seen_ts),
+                handle_duplicate_ts(f"{date_time}.1", seen_ts)
+            ]
+        else:
+            date_time = [handle_duplicate_ts(date_time, seen_ts)]
         highlight["created_at"] = date_time
 
-def generate_spreadsheet(highlights, long_vod_data):
+def generate_spreadsheet(highlights):
     wb = Workbook()
     ws = wb.active
     ws.title = "Twitch Highlights"
 
     # Add headers
-    ws.append(["Date and Time", "Title", "Twitch Link", "YouTube Link"])
-
-    long_vod_ts = [title.split(' ')[0] for (url, title) in long_vod_data]
+    ws.append(["Date and Time", "Title", "Twitch Link", "Note"])
 
     # Add highlight data
     for highlight in highlights:
         date_time = highlight["created_at"]
         title = highlight["title"]
         twitch_link = f"https://dashboard.twitch.tv/u/{USERNAME}/content/video-producer/edit/{highlight['id']}"
-
-        if date_time in long_vod_ts:
-          ws.append([f"{date_time}.0", title, twitch_link, ""])
-          ws.append([f"{date_time}.1", title, twitch_link, ""])
+        if len(date_time) > 1:
+            split = ">12H"
         else:
-          ws.append([date_time, title, twitch_link, ""])
+            split = ""
+        for x in date_time:
+            ws.append([f"{x}", title, twitch_link, split])
 
     # Save the spreadsheet
     wb.save(SPREADSHEET)
@@ -220,10 +225,17 @@ if __name__ == "__main__":
         highlights = fetch_all_highlights(user_id)
         print(f"Fetched {len(highlights)} highlights.")
 
-        # fix duplicate timestamps
-        adjust_ts(highlights)
+        # first_adjust duplicate TSes without taking long vods into account
+        seen_ts = []
+        for highlight in highlights:
+            highlight["created_at"] = handle_duplicate_ts(highlight["created_at"], seen_ts)
 
+        # now, figure out which vods are >12h and add the adjusted ts to the list
+        # if we don't adjust tses before this, we will end up with dupe tses being
+        # mistakenly set as long vods
         long_vod_data = generate_long_vod_pickle_file(highlights)
-        generate_spreadsheet(highlights, long_vod_data)
+        long_vod_ts = [title.split(' ')[0] for (url, title) in long_vod_data]
+        adjust_ts(highlights, long_vod_ts)
+        generate_spreadsheet(highlights)
     except Exception as e:
         print(f"An error occurred: {e}")

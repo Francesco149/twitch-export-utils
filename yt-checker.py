@@ -102,21 +102,6 @@ def main():
     # Search for videos and collect URLs
     video_urls = search_videos_by_timestamps(youtube, timestamps, titles)
 
-    # used to temporarily mark long vods in the spreadsheet so I don't
-    # click them
-    if len(sys.argv) > 1 and sys.argv[1] == "-m":
-        with open("long_vods.pkl", "rb") as file:
-            longvods = pickle.load(file)
-
-        longvods_ts = [title.split(' ')[0] for (url, title) in longvods]
-
-        # ts1 ts2 -> ts1.0 ts1.1 ts2.0 ts2.1 ...
-        longvods_ts_split = [f"{ts}.{i}" for ts in longvods_ts for i in range(2)]
-
-        for i, (ts, url) in enumerate(zip(timestamps, video_urls)):
-          if ts in longvods_ts_split:
-              video_urls[i] = "*** LONG VOD >12h ***"
-
     # Create a DataFrame with the results
     df = pd.DataFrame({
         'Timestamp': timestamps,
