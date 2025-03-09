@@ -1,5 +1,6 @@
 import pickle
 import os
+import re
 
 def cache_name(name):
     return name + '.pickle'
@@ -26,7 +27,7 @@ def cached(func):
 
 
 def truncate_title(ftitle):
-    ftitle = ftitle.strip("<>")
+    ftitle = re.sub('[<>]+', '', ftitle)
     try:
       return ftitle.encode()[:99].decode()
     except UnicodeDecodeError as err:
